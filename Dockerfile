@@ -1,7 +1,7 @@
 FROM alpine:3.10.1
 LABEL description="Docker Decred dcrd + dcrwallet + dcrctl alpine image"
 LABEL version="1.4.0"
-LABEL maintainer "dominus"
+LABEL maintainer="dominus"
 
 # Build command
 # docker build -t PrimeDominus/decred:v1.4.0 .
@@ -21,8 +21,7 @@ ENV DCRWALLET_HOME $DECRED_HOME/.dcrwallet
 RUN \
     # get packages
     apk update \
-    && apk add --no-cache -t build_deps bash shadow gnupg curl \
-    && set -x \
+    && apk add --no-cache -t build_deps shadow gnupg curl \
     # add our user and group first to make sure their IDs get assigned consistently
     && groupadd -r $DECRED_GROUP && useradd -r -m -g $DECRED_GROUP $DECRED_USER \
     # Register Decred Team PGP key
@@ -49,7 +48,7 @@ RUN \
     && chmod -R 755 bin \
     # Cleanup
     && apk del --purge build_deps \
-    && rm -rf /tmp/* /var/tmp/*
+    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 ENV PATH $PATH:$DECRED_INSTALL/bin
 
