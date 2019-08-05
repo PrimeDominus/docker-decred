@@ -50,7 +50,7 @@ RUN \
     && chown -R root.root bin \
     && chmod -R 755 bin \
     # Cleanup
-    && apk del --purge build_deps \
+    && apk del build_deps \
     && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 ENV PATH $PATH:$DECRED_INSTALL/bin
