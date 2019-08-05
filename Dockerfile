@@ -21,6 +21,9 @@ ENV DCRWALLET_HOME $DECRED_HOME/.dcrwallet
 RUN \
     # get packages
     apk update \
+    ## permanent packages
+    && apk add --no-cache ca-certificates \
+    ## temporary packages
     && apk add --no-cache -t build_deps shadow gnupg curl \
     # add our user and group first to make sure their IDs get assigned consistently
     && groupadd -r $DECRED_GROUP && useradd -r -m -g $DECRED_GROUP $DECRED_USER \
