@@ -4,7 +4,7 @@ LABEL version="1.4.0"
 LABEL maintainer="dominus"
 
 # Build command
-# docker build -t PrimeDominus/decred:v1.4.0 .
+# docker build -t alpine/decred:v1.4.0 .
 
 # Decred general info
 ENV DECRED_VERSION v1.4.0
@@ -24,11 +24,11 @@ RUN \
     ## permanent packages
     && apk add --no-cache ca-certificates \
     ## temporary packages
-    && apk add --no-cache -t build_deps shadow gnupg curl \
+    && apk add --no-cache -t build_deps bash shadow gnupg curl \
     # add our user and group first to make sure their IDs get assigned consistently
     && groupadd -r $DECRED_GROUP && useradd -r -m -g $DECRED_GROUP $DECRED_USER \
     # Register Decred Team PGP key
-    && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x6D897EDF518A031D \
+    && gpg --keyserver pgp.mit.edu --recv-keys 0x518A031D \
     # Get Binaries
     && BASE_URL="https://github.com/decred/decred-binaries/releases/download" \
     && DECRED_ARCHIVE="decred-linux-amd64-$DECRED_VERSION.tar.gz" \
@@ -50,7 +50,7 @@ RUN \
     && chown -R root.root bin \
     && chmod -R 755 bin \
     # Cleanup
-    && apk del build_deps \
+    && apk del --purge build_deps \
     && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 ENV PATH $PATH:$DECRED_INSTALL/bin
