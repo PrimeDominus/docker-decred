@@ -22,13 +22,15 @@ RUN \
     # get packages
     apk update \
     ## permanent packages
-    && apk add --no-cache ca-certificates \
+    && apk add --no-cache ca-certificates libc6-compat bash gnutls \
     ## temporary packages
-    && apk add --no-cache -t build_deps bash shadow gnupg curl \
+    && apk add --no-cache -t build_deps shadow gnupg curl \
     # add our user and group first to make sure their IDs get assigned consistently
+    && set -x \
     && groupadd -r $DECRED_GROUP && useradd -r -m -g $DECRED_GROUP $DECRED_USER \
     # Register Decred Team PGP key
-    && gpg --keyserver pgp.mit.edu --recv-keys 0x518A031D \
+    # && gpg --keyserver pgp.mit.edu --recv-keys 0x518A031D \
+    && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x6D897EDF518A031D \
     # Get Binaries
     && BASE_URL="https://github.com/decred/decred-binaries/releases/download" \
     && DECRED_ARCHIVE="decred-linux-amd64-$DECRED_VERSION.tar.gz" \
@@ -47,9 +49,11 @@ RUN \
     && tar xzf /tmp/$DECRED_ARCHIVE \
     && mv decred-linux-amd64-$DECRED_VERSION bin \
     # Set correct rights on executables
+    # && chown -R $DECRED_USER.$DECRED_USER bin \
     && chown -R root.root bin \
     && chmod -R 755 bin \
     # Cleanup
+    # && set +x \
     && apk del --purge build_deps \
     && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
@@ -61,3 +65,13 @@ USER $DECRED_USER
 RUN mkdir $DCRD_HOME $DCRCTL_HOME $DCRWALLET_HOME \
     && chmod -R 700 $DECRED_HOME
 WORKDIR $DECRED_HOME
+
+# Peer & RPC ports
+## mainnet
+EXPOSE 9108 9109
+
+## testnet
+EXPOSE 19108 19109
+
+## simnet
+EXPOSE 18555 19556
