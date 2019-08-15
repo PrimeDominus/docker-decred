@@ -22,8 +22,9 @@ LABEL maintainer="dominus"
 ####MAYBE#### ENTRYPOINT []
 ####MAYBE#### CMD []
 
+#WORKDIR //dcrd
 RUN \
-    git clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd
+    git clone -b ${DCRD_REPO_BRANCH} --single-branch --progress https://github.com/decred/dcrd.git
 
 FROM golang:${GOLANG_IMAGE_TAG} as go
 
@@ -56,7 +57,7 @@ FROM golang:${GOLANG_IMAGE_TAG} as go
 #
 
 WORKDIR /go/src/github.com/decred/dcrd
-COPY --from=git ~/dcrd/* .
+COPY --from=git git/dcrd/* .
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install . ./cmd/...
 
