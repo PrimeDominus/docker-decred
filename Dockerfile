@@ -23,8 +23,7 @@ LABEL maintainer="dominus"
 ####MAYBE#### CMD []
 
 RUN \
-    #git clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd/
-    clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd
+    git clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd
 
 FROM golang:${GOLANG_IMAGE_TAG} as go
 
