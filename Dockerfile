@@ -1,61 +1,109 @@
-FROM alpine:3.10.1
-LABEL description="Docker Decred dcrd + dcrwallet + dcrctl alpine image"
-LABEL version="1.4.0"
+# Default dcrd version should be latest stable release
+ARG DCRD_VERSION=1.4.0
+# Since master branch of the drcd repo is continuously updated
+# by default we should use the latest stable release branch
+ARG DCRD_REPO_BRANCH=release-v1.4
+# Default Go version should be the latest officially tested with dcrd
+# built for/on chosen production OS e.g. <dcrd-tested-golang-version>-<production-OS>
+ARG GOLANG_IMAGE_TAG=12.8-alpine
+# Production OS must work with BusyBox and apk for this Dockerfile to work
+ARG PROD_OS=alpine
+# Default Production OS version should be the lastest officially tested with dcrd
+# e.g. For alpine see https://github.com/decred/dcrd/blob/master/Dockerfile.alpine
+ARG PROD_OS_TAG=3.10.1
+
+FROM alpine/git as git
+
+LABEL description="Production dcrd + dcrctl built from Go source repos onto alpine image"
+LABEL version=${DCRD_VERSION}
 LABEL maintainer="dominus"
 
-# Build command
-# docker build -t alpine/decred:v1.4.0 .
+####MAYBE#### Clear alpine/git ENTRYPOINT and CMD to enable RUN with it
+####MAYBE#### ENTRYPOINT []
+####MAYBE#### CMD []
 
-# Decred general info
-ENV DECRED_VERSION v1.4.0
+RUN \
+    #git clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd/
+    clone -b ${DCRD_REPO_BRANCH} https://github.com/decred/dcrd.git ~/dcrd
+
+FROM golang:${GOLANG_IMAGE_TAG} as go
+
+#
+# NOTE: The RPC server listens on localhost by default.
+#       If you require access to the RPC server,
+#       rpclisten should be set to an empty value.
+#
+# NOTE: When running simnet, you may not want to preserve
+#       the data and logs.  This can be achieved by specifying
+#       a location outside the default ~/.dcrd.  For example:
+#          rpclisten=
+#          simnet=1
+#          datadir=~/simnet-data
+#          logdir=~/simnet-logs
+#
+# Example testnet instance with RPC server access:
+# $ mkdir -p /local/path/dcrd
+#
+# Place a dcrd.conf into a local directory, i.e. /var/dcrd
+# $ mv dcrd.conf /var/dcrd
+#
+# Verify basic configuration
+# $ cat /var/dcrd/dcrd.conf
+# rpclisten=
+# testnet=1
+#
+# Run the docker image, mapping the testnet dcrd RPC port.
+# $ docker run -d --rm -p 127.0.0.1:19109:19109 -v /var/dcrd:/root/.dcrd user/dcrd
+#
+
+WORKDIR /go/src/github.com/decred/dcrd
+COPY --from=git ~/dcrd/* .
+
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install . ./cmd/...
+
+# Production image
+## alpine version matched with latest tested release on 
+## https://github.com/decred/dcrd/blob/master/Dockerfile.alpine
+## FROM alpine:3.10.1
+FROM ${PROD_OS}:${PROD_OS_TAG}
+
+#
+# Build command
+# docker build -t alpine/go-dcrd:v1.4.0
+#
+
+# Prep OS config
+## Decred general info
+####MAY NO LONGER NEED: ENV DECRED_VERSION v1.4.0
 ENV DECRED_USER decred
 ENV DECRED_GROUP decred
 ENV DECRED_INSTALL /usr/local/decred
 ENV DECRED_HOME /home/decred
-# Decred working directories
+## Decred working directories
 ENV DCRD_HOME $DECRED_HOME/.dcrd
 ENV DCRCTL_HOME $DECRED_HOME/.dcrctl
 ENV DCRWALLET_HOME $DECRED_HOME/.dcrwallet
 
-# Install Decred distribution
+# Set up OS packages, users, groups, and other OS config
 RUN \
     # get packages
-    apk update \
     ## permanent packages
-    && apk add --no-cache ca-certificates libc6-compat bash gnutls \
+    apk add --no-cache ca-certificates \
     ## temporary packages
-    && apk add --no-cache -t build_deps shadow gnupg curl \
+    && apk add --no-cache -t build_deps bash shadow \
     # add our user and group first to make sure their IDs get assigned consistently
     && set -x \
     && groupadd -r $DECRED_GROUP && useradd -r -m -g $DECRED_GROUP $DECRED_USER \
-    # Register Decred Team PGP key
-    # && gpg --keyserver pgp.mit.edu --recv-keys 0x518A031D \
-    && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x6D897EDF518A031D \
-    # Get Binaries
-    && BASE_URL="https://github.com/decred/decred-binaries/releases/download" \
-    && DECRED_ARCHIVE="decred-linux-amd64-$DECRED_VERSION.tar.gz" \
-    && MANIFEST_SIGN="manifest-$DECRED_VERSION.txt.asc" \
-    && MANIFEST="manifest-$DECRED_VERSION.txt" \
-    && cd /tmp \
-    && curl -SLO $BASE_URL/$DECRED_VERSION/$DECRED_ARCHIVE \
-    && curl -SLO $BASE_URL/$DECRED_VERSION/$MANIFEST \
-    && curl -SLO $BASE_URL/$DECRED_VERSION/$MANIFEST_SIGN \
-    # Verify authenticity - Check GPG sign + Package Hash
-    && gpg --verify /tmp/$MANIFEST_SIGN \
-    && grep "$DECRED_ARCHIVE" /tmp/$MANIFEST | sha256sum -c - \
-    # Install
-    && mkdir -p $DECRED_INSTALL \
-    && cd $DECRED_INSTALL \
-    && tar xzf /tmp/$DECRED_ARCHIVE \
-    && mv decred-linux-amd64-$DECRED_VERSION bin \
     # Set correct rights on executables
-    # && chown -R $DECRED_USER.$DECRED_USER bin \
+    ####UNTESTED####&& chown -R $DECRED_USER.$DECRED_USER bin \
     && chown -R root.root bin \
     && chmod -R 755 bin \
     # Cleanup
-    # && set +x \
+    && set +x \
     && apk del --purge build_deps \
     && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+
+COPY --from=go /go/bin/* $DECRED_INSTALL/bin/
 
 ENV PATH $PATH:$DECRED_INSTALL/bin
 
@@ -75,3 +123,5 @@ EXPOSE 19108 19109
 
 ## simnet
 EXPOSE 18555 19556
+
+####Maybe not needed since we have WORKDIR above: CMD [ "dcrd" ]
