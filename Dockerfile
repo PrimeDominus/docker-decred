@@ -5,11 +5,12 @@ ARG DCRD_VERSION=1.4.0
 ARG DCRD_REPO_BRANCH=release-v1.4
 # Default Go version should be the latest officially tested with dcrd
 # built for/on chosen production OS e.g. <dcrd-tested-golang-version>-<production-OS>
-ARG GOLANG_IMAGE_TAG=12.8-alpine
+ARG GOLANG_IMAGE_TAG=1.12-alpine
 # Production OS must work with BusyBox and apk for this Dockerfile to work
 ARG PROD_OS=alpine
 # Default Production OS version should be the lastest officially tested with dcrd
 # e.g. For alpine see https://github.com/decred/dcrd/blob/master/Dockerfile.alpine
+# See https://hub.docker.com/_/golang?tab=description&page=4 for more details.
 ARG PROD_OS_TAG=3.10.1
 
 FROM alpine/git as git
@@ -25,10 +26,11 @@ LABEL maintainer="dominus"
 #WORKDIR //dcrd
 #RUN \
 
-ENV DCRD_REPO_BRANCH ${DCRD_REPO_BRANCH}
+#ENV DCRD_REPO_BRANCH ${DCRD_REPO_BRANCH}
 #RUN ["git", "clone", "-b", "$DCRD_REPO_BRANCH", "https://github.com/decred/dcrd.git"]
-RUN git clone -b $DCRD_REPO_BRANCH https://github.com/decred/dcrd.git
+#RUN git clone -b $DCRD_REPO_BRANCH https://github.com/decred/dcrd.git
 # git clone -b release-v1.4 https://github.com/decred/dcrd.git
+RUN git clone -b "${DCRD_REPO_BRANCH}" https://github.com/decred/dcrd.git
 
 FROM golang:${GOLANG_IMAGE_TAG} as go
 
