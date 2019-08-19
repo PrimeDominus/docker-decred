@@ -25,7 +25,7 @@ LABEL maintainer="dominus"
 
 #WORKDIR //dcrd
 #RUN \
-
+ARG DCRD_REPO_BRANCH
 ENV DCRD_REPO_BRANCH=${DCRD_REPO_BRANCH}
 RUN echo $DCRD_REPO_BRANCH
 #RUN ["git", "clone", "-b", "$DCRD_REPO_BRANCH", "https://github.com/decred/dcrd.git"]
