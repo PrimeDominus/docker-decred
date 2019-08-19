@@ -68,7 +68,7 @@ FROM golang:${GOLANG_IMAGE_TAG} as go
 #
 
 WORKDIR /go/src/github.com/decred/dcrd
-COPY --from=git /git/dcrd .
+COPY --from=git /dcrd .
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install . ./cmd/...
 
