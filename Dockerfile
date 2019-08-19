@@ -70,8 +70,8 @@ FROM golang:${GOLANG_IMAGE_TAG} as go
 
 WORKDIR /go/src/github.com/decred/dcrd
 COPY --from=git /dcrd .
-RUN pwd && ls -la \
-    apk add --no-cache ca-certificates git
+#RUN pwd && ls -la \
+RUN apk add --no-cache ca-certificates git
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go install . ./cmd/...
 
