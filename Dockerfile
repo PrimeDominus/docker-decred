@@ -28,12 +28,13 @@ LABEL maintainer="dominus"
 ARG DCRD_REPO_BRANCH
 ENV DCRD_REPO_BRANCH=${DCRD_REPO_BRANCH}
 RUN echo $DCRD_REPO_BRANCH
+RUN echo ${DCRD_REPO_BRANCH}
 #RUN ["git", "clone", "-b", "$DCRD_REPO_BRANCH", "https://github.com/decred/dcrd.git"]
 #RUN git clone -b $DCRD_REPO_BRANCH https://github.com/decred/dcrd.git
 # git clone -b release-v1.4 https://github.com/decred/dcrd.git
 # RUN git clone -b "$DCRD_REPO_BRANCH" https://github.com/decred/dcrd.git
 RUN git clone https://github.com/decred/dcrd.git
-RUN git checkout $DCRD_REPO_BRANCH
+RUN git checkout ${DCRD_REPO_BRANCH}
 
 FROM golang:${GOLANG_IMAGE_TAG} as go
 
